@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AAS // Faction Template Generator</title>
+<meta name="description" content="Build paste-ready AAS faction templates with smart input handling and automatic array escaping.">
+<meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Saira+Stencil+One&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e0c;
+    --panel: #1a1a14;
+    --panel-edge: #2d2c22;
+    --field: #0a0a08;
+    --field-deep: #050504;
+    --text: #e6dfc8;
+    --text-dim: #8a8470;
+    --text-faint: #54513f;
+    --amber: #ffae3d;
+    --amber-soft: #ffc05f;
+    --amber-dim: #b8782a;
+    --amber-glow: rgba(255, 174, 61, 0.10);
+    --olive: #6e7f3a;
+    --olive-glow: rgba(110, 127, 58, 0.04);
+    --red: #c84a3a;
+    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    --stencil: 'Saira Stencil One', 'JetBrains Mono', monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2.5rem 1rem 7rem;
+    background:
+      linear-gradient(transparent 95%, var(--olive-glow) 95%) 0 0 / 100% 24px,
+      linear-gradient(90deg, transparent 95%, var(--olive-glow) 95%) 0 0 / 24px 100%,
+      radial-gradient(ellipse at top, #14140f 0%, var(--bg) 65%);
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+
+  header {
+    border: 1px solid var(--panel-edge);
+    background: var(--panel);
+    position: relative;
+    margin-bottom: 1.25rem;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    inset: -1px -1px auto -1px;
+    height: 4px;
+    background: var(--amber);
+  }
+  .hdr-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 1.25rem;
+    border-bottom: 1px solid var(--panel-edge);
+    font-size: 10px;
+    color: var(--text-faint);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .stamp { display: inline-flex; gap: 10px; align-items: center; }
+  .pulse {
+    display: inline-block;
+    width: 7px; height: 7px;
+    background: var(--amber);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--amber);
+    animation: pulse 2.2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.35; }
+    50% { opacity: 1; }
+  }
+  .hdr-main { padding: 1.5rem 1.25rem 1.75rem; }
+  h1 {
+    font-family: var(--stencil);
+    font-size: clamp(26px, 5vw, 38px);
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    margin: 0;
+    color: var(--text);
+    line-height: 1;
+  }
+  h1 .sep { color: var(--amber); margin: 0 0.5rem; }
+  h1 + .sub {
+    display: block;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 10px;
+    max-width: 620px;
+  }
+
+  .name-bar {
+    border: 1px solid var(--amber-dim);
+    background: var(--panel);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .name-bar label {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--amber);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .name-bar input {
+    flex: 1;
+    min-width: 200px;
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 12px;
+    background: var(--field);
+    color: var(--amber-soft);
+    border: 1px solid var(--panel-edge);
+    border-radius: 0;
+    caret-color: var(--amber);
+  }
+  .name-bar input:focus {
+    outline: none;
+    border-color: var(--amber);
+    box-shadow: 0 0 0 3px var(--amber-glow);
+  }
+
+  .group-div {
+    font-family: var(--stencil);
+    font-size: 18px;
+    color: var(--amber);
+    margin: 1.75rem 0 0.75rem;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .group-div::before, .group-div::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--amber-dim);
+    opacity: 0.4;
+  }
+  .group-div:first-of-type { margin-top: 0.5rem; }
+
+  details.section {
+    border: 1px solid var(--panel-edge);
+    background: var(--panel);
+    margin-bottom: 8px;
+  }
+  details.section[open] { border-color: var(--amber-dim); }
+  details.section summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    user-select: none;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    transition: background 0.15s;
+  }
+  details.section summary::-webkit-details-marker { display: none; }
+  details.section summary:hover { background: var(--amber-glow); }
+  details.section summary::before {
+    content: '\25B6';
+    color: var(--amber-dim);
+    font-size: 9px;
+    transition: transform 0.2s;
+    display: inline-block;
+    width: 14px;
+    flex-shrink: 0;
+  }
+  details.section[open] summary::before {
+    transform: rotate(90deg);
+    color: var(--amber);
+  }
+  .sect-title { flex: 1; }
+  .sect-count {
+    font-size: 10px;
+    color: var(--text-faint);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .sect-body {
+    padding: 6px 16px 16px;
+    border-top: 1px dashed var(--panel-edge);
+  }
+
+  .field {
+    display: grid;
+    grid-template-columns: 220px 1fr 70px;
+    gap: 12px;
+    align-items: center;
+    padding: 7px 0;
+  }
+  .field + .field { border-top: 1px dashed rgba(45, 44, 34, 0.5); }
+  .field .lbl {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.4;
+  }
+  .field .key {
+    display: block;
+    font-size: 10px;
+    color: var(--text-faint);
+    margin-top: 2px;
+  }
+  .field input[type="text"], .field input[type="number"] {
+    width: 100%;
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 7px 10px;
+    background: var(--field);
+    color: var(--text);
+    border: 1px solid var(--panel-edge);
+    border-radius: 0;
+    caret-color: var(--amber);
+    -moz-appearance: textfield;
+  }
+  .field input[type="number"]::-webkit-outer-spin-button,
+  .field input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .field input[type="number"] { max-width: 140px; }
+  .field input[type="text"]:focus, .field input[type="number"]:focus {
+    outline: none;
+    border-color: var(--amber);
+    box-shadow: 0 0 0 2px var(--amber-glow);
+  }
+  .field input.changed { border-color: var(--olive); }
+  .field input.invalid { border-color: var(--red); }
+  .field input.is-array {
+    background: var(--field-deep);
+    color: var(--amber-soft);
+  }
+  .field .meta { font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-faint); white-space: nowrap; text-align: right; }
+  .field .meta.array { color: var(--amber); }
+  .field .meta.invalid { color: var(--red); }
+
+  .field .bool-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .field input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 38px; height: 20px;
+    background: var(--field-deep);
+    border: 1px solid var(--panel-edge);
+    cursor: pointer;
+    position: relative;
+    margin: 0;
+    transition: background 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+  }
+  .field input[type="checkbox"]::after {
+    content: '';
+    position: absolute;
+    left: 2px; top: 2px;
+    width: 14px; height: 14px;
+    background: var(--text-faint);
+    transition: left 0.15s, background 0.15s;
+  }
+  .field input[type="checkbox"]:checked {
+    background: var(--amber-glow);
+    border-color: var(--amber);
+  }
+  .field input[type="checkbox"]:checked::after {
+    left: 20px;
+    background: var(--amber);
+  }
+  .bool-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-faint);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    min-width: 42px;
+  }
+  .field input[type="checkbox"]:checked + .bool-label { color: var(--amber); }
+
+  .output-panel {
+    border: 1px solid var(--amber-dim);
+    background: var(--panel);
+    margin-top: 1.5rem;
+  }
+  .output-head {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--panel-edge);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .output-head-left {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--amber);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .output-head-left::before {
+    content: '';
+    width: 14px;
+    height: 1px;
+    background: var(--amber-dim);
+  }
+  .output-stats {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+  .output-stats .val { color: var(--amber); }
+  .output-body textarea {
+    width: 100%;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.55;
+    padding: 14px 16px;
+    background: var(--field-deep);
+    color: var(--amber-soft);
+    border: 0;
+    border-radius: 0;
+    resize: vertical;
+    min-height: 320px;
+    display: block;
+  }
+  .output-body textarea:focus { outline: none; }
+
+  button {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--panel-edge);
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s, transform 0.05s;
+    border-radius: 0;
+  }
+  button:hover {
+    border-color: var(--amber);
+    color: var(--amber);
+    background: var(--amber-glow);
+  }
+  button:active { transform: translateY(1px); }
+  button.primary {
+    background: var(--amber);
+    color: var(--bg);
+    border-color: var(--amber);
+    font-weight: 700;
+  }
+  button.primary:hover {
+    background: var(--amber-soft);
+    border-color: var(--amber-soft);
+    color: var(--bg);
+  }
+  button.copied {
+    background: var(--olive) !important;
+    border-color: var(--olive) !important;
+    color: var(--text) !important;
+  }
+
+  .action-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    border-top: 1px solid var(--amber-dim);
+    padding: 12px 1.5rem;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    backdrop-filter: blur(8px);
+    background: rgba(26, 26, 20, 0.96);
+  }
+  .action-bar .ctx {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+  .action-bar .ctx .val { color: var(--amber); }
+
+  .briefing {
+    margin-top: 1.5rem;
+    padding: 1.25rem 1.5rem;
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-left: 3px solid var(--olive);
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .briefing-tag {
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--olive);
+    margin-bottom: 10px;
+    display: block;
+    font-weight: 700;
+  }
+  .briefing ol { margin: 0; padding-left: 1.25rem; }
+  .briefing li { margin-bottom: 6px; line-height: 1.55; }
+  .briefing code {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--field);
+    color: var(--amber);
+    padding: 1px 5px;
+    border: 1px solid var(--panel-edge);
+  }
+
+  footer {
+    text-align: center;
+    margin-top: 1.75rem;
+    color: var(--text-faint);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+  footer .div { color: var(--amber-dim); margin: 0 10px; }
+
+  @media (max-width: 680px) {
+    body { padding: 1.5rem 0.75rem 7rem; }
+    .field { grid-template-columns: 1fr; gap: 4px; }
+    .field .meta { text-align: left; }
+    .field input[type="number"] { max-width: 100%; }
+    h1 { font-size: 24px; }
+    .action-bar { padding: 10px 1rem; }
+    .action-bar .ctx { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="hdr-row">
+      <span class="stamp"><span class="pulse"></span> Signal locked</span>
+      <span>AAS-Ops &middot; Template Generator v1.0</span>
+    </div>
+    <div class="hdr-main">
+      <h1>AAS<span class="sep">//</span>FACTION TEMPLATE GENERATOR</h1>
+      <span class="sub">Build a complete, paste-ready AAS faction template. Arrays in any classname field are auto-escaped &mdash; just paste your AAS Eden exports straight in.</span>
+    </div>
+  </header>
+
+  <div class="name-bar">
+    <label for="tpl-name">Your faction template name //</label>
+    <input id="tpl-name" type="text" value="TEMPLATE_NAME" spellcheck="false" autocomplete="off">
+  </div>
+
+  <div id="form-root"></div>
+
+  <div class="output-panel">
+    <div class="output-head">
+      <span class="output-head-left">Output &mdash; helipad init SQF</span>
+      <span class="output-stats">Overrides: <span class="val" id="mod-count">0</span></span>
+    </div>
+    <div class="output-body">
+      <textarea id="output" readonly spellcheck="false"></textarea>
+    </div>
+  </div>
+
+  <div class="briefing">
+    <span class="briefing-tag">// Ops briefing</span>
+    <ol>
+      <li>Set your <code>Template name //</code> at the top &mdash; this becomes <code>_name</code> in the SQF. Don't leave it as <code>TEMPLATE_NAME</code>.</li>
+      <li>Expand any section to override its defaults. Anything you don't touch stays at vanilla NATO values.</li>
+      <li>Need a custom loadout? Paste the full Eden array (with the standard <code>""</code> escapes) into the classname field &mdash; the page detects it, marks it <code>[ARRAY]</code>, and doubles the quotes for you.</li>
+      <li>Hit <code>COPY TEMPLATE</code> at the bottom. Drop the result into the init field of an invisible helipad in your mission, then place that helipad somewhere accessible.</li>
+      <li>Loading the mission as host fires the script once, installs the template into <code>profileNamespace</code>, and the helipad deletes itself. Open the AAS pager to verify the load notification.</li>
+    </ol>
+  </div>
+
+  <footer>
+    AAS<span class="div">/</span>Faction template generator<span class="div">/</span>v1.0
+  </footer>
+
+</div>
+
+<div class="action-bar">
+  <span class="ctx">Status: <span class="val" id="status">Ready</span></span>
+  <button type="button" id="reset">Reset all</button>
+  <button type="button" id="copy" class="primary">&#x29C9; Copy template</button>
+</div>
+
+<script>
+// Types: 's' string, 'b' boolean, 'n' number
+// Field tuple: [key, label, type, default]
+const SCHEMA = [
+  { group: 'MAIN SUPPORTS' },
+
+  { section: 'Supply Aircraft', fields: [
+    ['AAS_Heli_Supply', 'Supply Helicopter/Plane', 's', 'B_Heli_Light_01_F']
+  ]},
+
+  { section: 'CAS \u2014 Gunship', fields: [
+    ['AAS_CAS_Gunship_Class', 'Classname', 's', 'B_T_VTOL_01_armed_F'],
+    ['AAS_CAS_Gunship_Height', 'Loiter Height (m)', 'n', '400'],
+    ['AAS_CAS_Gunship_Orbit', 'Force Counter-clockwise Orbit', 'b', true],
+    ['AAS_CAS_Gunship_Radius', 'Loiter Radius (m)', 'n', '1000']
+  ]},
+
+  { section: 'CAS \u2014 Helicopter', fields: [
+    ['AAS_CAS_Heli_Class', 'Classname', 's', 'B_Heli_Attack_01_dynamicLoadout_F']
+  ]},
+
+  { section: 'CAS \u2014 Plane', fields: [
+    ['AAS_CAS_Plane_Class', 'Classname', 's', 'B_Plane_CAS_01_dynamicLoadout_F']
+  ]},
+
+  { section: 'Reinforcements \u2014 Airborne Infantry', fields: [
+    ['AAS_Reinf_Air_SL', 'Squad Leader', 's', 'B_Soldier_SL_F'],
+    ['AAS_Reinf_Air_Sniper', 'Sniper / Medic', 's', 'B_soldier_M_F'],
+    ['AAS_Reinf_Air_AT', 'Anti-Tank', 's', 'B_soldier_LAT_F'],
+    ['AAS_Reinf_Air_AR', 'Autorifleman', 's', 'B_soldier_AR_F'],
+    ['AAS_Reinf_Air_LightHeli', 'Light Helicopter (4-Man)', 's', 'B_Heli_Light_01_F'],
+    ['AAS_Reinf_Air_StdHeli', 'Standard Helicopter (8-Man)', 's', 'B_Heli_Transport_01_F'],
+    ['AAS_Reinf_Air_Plane', 'Paradrop Plane (12-Man)', 's', 'B_T_VTOL_01_infantry_F']
+  ]},
+
+  { section: 'Reinforcements \u2014 Mechanized Infantry', fields: [
+    ['AAS_Reinf_Ground_SL', 'Squad Leader', 's', 'B_Soldier_SL_F'],
+    ['AAS_Reinf_Ground_Sniper', 'Sniper / Medic', 's', 'B_soldier_M_F'],
+    ['AAS_Reinf_Ground_AT', 'Anti-Tank', 's', 'B_soldier_LAT_F'],
+    ['AAS_Reinf_Ground_AR', 'Autorifleman', 's', 'B_soldier_AR_F'],
+    ['AAS_Reinf_Ground_MRAP', 'MRAP (4-Man)', 's', 'B_MRAP_01_F'],
+    ['AAS_Reinf_Ground_APC', 'APC (8-Man)', 's', 'B_APC_Wheeled_01_cannon_F'],
+    ['AAS_Reinf_Ground_Truck', 'Truck (12-Man)', 's', 'B_Truck_01_transport_F']
+  ]},
+
+  { section: 'Reinforcements \u2014 Armor', fields: [
+    ['AAS_Reinf_Armor_Turret', 'Turreted Vehicle', 's', 'B_MRAP_01_hmg_F'],
+    ['AAS_Reinf_Armor_APC', 'IFV / APC', 's', 'B_APC_Tracked_01_rcws_F'],
+    ['AAS_Reinf_Armor_Tank', 'Tank', 's', 'B_MBT_01_cannon_F']
+  ]},
+
+  { group: 'QUICK REACTION FORCE' },
+
+  { section: 'Ground/Air Squad', fields: [
+    ['AQR_Squad_SL', 'Squad Leader', 's', 'B_Soldier_SL_F'],
+    ['AQR_Squad_MG', 'Machine Gunner', 's', 'B_autorifleman_F'],
+    ['AQR_Squad_AT', 'Anti-Tank', 's', 'B_soldier_LAT_F'],
+    ['AQR_Squad_Sniper', 'Sniper / Medic', 's', 'B_sniper_F']
+  ]},
+
+  { section: 'Amphibious Squad', fields: [
+    ['AQR_Amphib_SL', 'Squad Leader', 's', 'B_diver_TL_F'],
+    ['AQR_Amphib_MG', 'Machine Gunner', 's', 'B_diver_AR_F'],
+    ['AQR_Amphib_AT', 'Anti-Tank', 's', 'B_diver_exp_F'],
+    ['AQR_Amphib_Sniper', 'Sniper', 's', 'B_diver_F']
+  ]},
+
+  { section: 'Ground Vehicles', fields: [
+    ['AQR_Ground_Turret', 'Turreted Vehicle', 's', 'B_MRAP_01_hmg_F'],
+    ['AQR_Ground_APC', 'APC', 's', 'B_APC_Wheeled_01_cannon_F']
+  ]},
+
+  { section: 'Watercraft', fields: [
+    ['AQR_Sea_Boat', 'Armed Boat', 's', 'B_Boat_Armed_01_minigun_F'],
+    ['AQR_Sea_Amphib', 'Amphibious Vehicle', 's', 'B_APC_Wheeled_01_cannon_F']
+  ]},
+
+  { section: 'Aircraft', fields: [
+    ['AQR_Heli_CAS', 'CAS Helicopter', 's', 'B_Heli_Light_01_dynamicLoadout_F'],
+    ['AQR_Heli_Escort', 'Escort Helicopter', 's', 'B_Heli_Attack_01_dynamicLoadout_F'],
+    ['AQR_Heli_Heavy', 'Heavy Helicopter', 's', 'B_Heli_Transport_03_F'],
+    ['AQR_Plane_Class', 'VTOL / Plane', 's', 'B_T_VTOL_01_vehicle_F']
+  ]},
+
+  { group: 'Airstrikes' },
+
+  { section: 'Airstrikes \u2014 Aircraft', fields: [
+    ['AAS_AS_Plane_GunRun', 'Gun Run Plane', 's', 'B_Plane_CAS_01_dynamicLoadout_F'],
+    ['AAS_AS_Plane_JDAM', 'JDAM Strike Plane', 's', 'B_Plane_Fighter_01_F'],
+    ['AAS_AS_Plane_MidnightSun', 'Midnight Sun (Flare) Plane', 's', 'B_T_VTOL_01_vehicle_F'],
+    ['AAS_AS_Plane_UnguidedBomb', 'Carpet Bombing Plane', 's', 'B_Plane_Fighter_01_F'],
+    ['AAS_AS_Toggle_Brrrt', 'Enable Gun Run BRRRT Sound', 'b', true]
+  ]},
+
+  { group: 'Logistics' },
+
+  { section: 'Helicopters', fields: [
+    ['AAS_LOG_Comp_Heli', 'Composition Delivery Helicopter', 's', 'B_Heli_Transport_03_F'],
+    ['AAS_LOG_Transport_HeliClass', 'Standard Transport Helicopter', 's', 'B_Heli_Transport_01_F'],
+    ['AAS_LOG_TransportHeavy_HeliClass', 'Heavy Transport Helicopter', 's', 'B_Heli_Transport_03_F']
+  ]}
+];
+
+const EQUIP_DATA = [
+  ['NATO Supplies', 'B_CargoNet_01_ammo_F', 'B_Heli_Light_01_F', false, false, '4.0'],
+  ['OPFOR Supplies', 'O_CargoNet_01_ammo_F', 'B_Heli_Light_01_F', false, false, '4.0'],
+  ['AN/MPQ-105', 'B_Radar_System_01_F', 'B_Heli_Transport_03_F', false, true, '6.0'],
+  ['Praetorian 1C', 'B_AAA_System_01_F', 'B_Heli_Transport_03_F', true, false, '10.0'],
+  ['Mk49 Spartan', 'B_SAM_System_01_F', 'B_Heli_Transport_03_F', true, false, '12.0'],
+  ['MIM-145 Defender', 'B_SAM_System_03_F', 'B_Heli_Transport_03_F', false, true, '18.0']
+];
+
+const VEH_DATA = [
+  ['Quadbike', 'B_Quadbike_01_F', 'B_Heli_Light_01_F', false, false, '0.2'],
+  ['Jeep', 'C_Offroad_02_unarmed_F', 'B_Heli_Transport_01_F', false, false, '0.5'],
+  ['Prowler HMG', 'B_LSV_01_armed_F', 'B_Heli_Transport_01_F', false, false, '2.0'],
+  ['HEMTT Cargo', 'B_Truck_01_transport_F', 'B_Heli_Transport_03_F', false, false, '2.0'],
+  ['Hunter GMG', 'B_MRAP_01_gmg_F', 'B_Heli_Transport_03_F', false, false, '6.0'],
+  ['AMV-7 Marshall', 'B_APC_Wheeled_01_cannon_F', 'B_Heli_Transport_03_F', false, true, '10.0'],
+  ['SDV Submersible', 'B_SDV_01_F', 'B_Heli_Transport_01_F', false, false, '2.0'],
+  ['Armed Boat', 'B_Boat_Armed_01_minigun_F', 'B_Heli_Transport_03_F', false, false, '4.0']
+];
+
+EQUIP_DATA.forEach(function(d, i) {
+  var n = i + 1;
+  SCHEMA.push({
+    section: 'Logistics \u2014 Equipment ' + n + ' ',
+    fields: [
+      ['AAS_LOG_Equip' + n + '_Name',      'Menu Name',        's', d[0]],
+      ['AAS_LOG_Equip' + n + '_Class',     'Classname',           's', d[1]],
+      ['AAS_LOG_Equip' + n + '_Heli',      'Delivery Helicopter', 's', d[2]],
+      ['AAS_LOG_Equip' + n + '_Container', 'Containerized',       'b', d[3]],
+      ['AAS_LOG_Equip' + n + '_ForceRope', 'Force Custom Ropes',  'b', d[4]],
+      ['AAS_LOG_Equip' + n + '_Mult',      'Cost Multiplier',     'n', d[5]]
+    ]
+  });
+});
+
+VEH_DATA.forEach(function(d, i) {
+  var n = i + 1;
+  SCHEMA.push({
+    section: 'Logistics \u2014 Vehicle ' + n + ' ',
+    fields: [
+      ['AAS_LOG_Veh' + n + '_Name',      'Menu Name',        's', d[0]],
+      ['AAS_LOG_Veh' + n + '_Class',     'Classname',           's', d[1]],
+      ['AAS_LOG_Veh' + n + '_Heli',      'Delivery Helicopter', 's', d[2]],
+      ['AAS_LOG_Veh' + n + '_Container', 'Containerized',       'b', d[3]],
+      ['AAS_LOG_Veh' + n + '_ForceRope', 'Force Custom Ropes',  'b', d[4]],
+      ['AAS_LOG_Veh' + n + '_Mult',      'Cost Multiplier',     'n', d[5]]
+    ]
+  });
+});
+
+// State
+var STATE = {};
+var DEFAULTS = {};
+var TYPES = {};
+var ORDER = [];
+
+SCHEMA.forEach(function(entry) {
+  if (entry.section) {
+    if (ORDER.length) ORDER.push(null);
+    entry.fields.forEach(function(f) {
+      var k = f[0], t = f[2], d = f[3];
+      STATE[k] = d;
+      DEFAULTS[k] = d;
+      TYPES[k] = t;
+      ORDER.push(k);
+    });
+  }
+});
+
+// Helpers
+function $(id) { return document.getElementById(id); }
+function el(tag, attrs, children) {
+  var node = document.createElement(tag);
+  attrs = attrs || {};
+  Object.keys(attrs).forEach(function(k) {
+    var v = attrs[k];
+    if (k === 'class') node.className = v;
+    else if (k.indexOf('on') === 0) node.addEventListener(k.slice(2), v);
+    else node.setAttribute(k, v);
+  });
+  children = children || [];
+  if (!Array.isArray(children)) children = [children];
+  children.forEach(function(c) {
+    if (c == null) return;
+    node.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+  });
+  return node;
+}
+function isArrayLiteral(s) {
+  var t = String(s).trim();
+  return t.length >= 2 && t.charAt(0) === '[' && t.charAt(t.length - 1) === ']';
+}
+function isValidNumber(s) {
+  if (s === '' || s == null) return false;
+  return /^-?\d+(\.\d+)?$/.test(String(s).trim());
+}
+
+// Render
+function renderField(field) {
+  var key = field[0], label = field[1], type = field[2], def = field[3];
+
+  var lblBlock = el('div', { class: 'lbl' }, [
+    label,
+    el('span', { class: 'key' }, key)
+  ]);
+
+  if (type === 'b') {
+    var cb = el('input', { type: 'checkbox', id: 'f_' + key });
+    if (def) cb.checked = true;
+    var lblText = el('span', { class: 'bool-label' }, def ? 'true' : 'false');
+    cb.addEventListener('change', function() {
+      STATE[key] = cb.checked;
+      lblText.textContent = cb.checked ? 'true' : 'false';
+      regenerate();
+    });
+    return el('div', { class: 'field' }, [
+      lblBlock,
+      el('label', { class: 'bool-wrap', for: 'f_' + key }, [cb, lblText]),
+      el('span', { class: 'meta' })
+    ]);
+  }
+
+  if (type === 'n') {
+    var ninput = el('input', {
+      type: 'number', step: 'any', value: String(def), id: 'f_' + key,
+      inputmode: 'decimal'
+    });
+    var nmeta = el('span', { class: 'meta' });
+    ninput.addEventListener('input', function() {
+      var v = ninput.value;
+      STATE[key] = v;
+      ninput.classList.toggle('changed', v !== String(def));
+      var ok = isValidNumber(v);
+      ninput.classList.toggle('invalid', !ok);
+      nmeta.textContent = ok ? '' : 'NaN';
+      nmeta.classList.toggle('invalid', !ok);
+      regenerate();
+    });
+    return el('div', { class: 'field' }, [lblBlock, ninput, nmeta]);
+  }
+
+  var input = el('input', {
+    type: 'text', value: String(def), id: 'f_' + key,
+    spellcheck: 'false', autocomplete: 'off', autocapitalize: 'off'
+  });
+  var meta = el('span', { class: 'meta' });
+  function updateMeta() {
+    var v = input.value;
+    var arr = isArrayLiteral(v);
+    input.classList.toggle('changed', v !== def);
+    input.classList.toggle('is-array', arr);
+    meta.textContent = arr ? '[ARRAY]' : '';
+    meta.classList.toggle('array', arr);
+  }
+  updateMeta();
+  input.addEventListener('input', function() {
+    STATE[key] = input.value;
+    updateMeta();
+    regenerate();
+  });
+  return el('div', { class: 'field' }, [lblBlock, input, meta]);
+}
+
+function renderForm() {
+  var root = $('form-root');
+  root.innerHTML = '';
+  SCHEMA.forEach(function(entry) {
+    if (entry.group) {
+      root.appendChild(el('div', { class: 'group-div' }, entry.group));
+      return;
+    }
+    if (entry.section) {
+      var body = el('div', { class: 'sect-body' }, entry.fields.map(renderField));
+      var count = entry.fields.length;
+      var summary = el('summary', {}, [
+        el('span', { class: 'sect-title' }, entry.section),
+        el('span', { class: 'sect-count' }, count + ' ' + (count === 1 ? 'field' : 'fields'))
+      ]);
+      var det = el('details', { class: 'section' }, [summary, body]);
+      root.appendChild(det);
+    }
+  });
+}
+
+// Output
+var INDENT = '        '; // 8 spaces
+var KEY_WIDTH = 37;
+var VAL_WIDTH = 36;
+
+function pad(s, w) {
+  s = String(s);
+  if (s.length >= w) return s + ' ';
+  return s + new Array(w - s.length + 1).join(' ');
+}
+
+function formatValue(val, type) {
+  if (type === 'b') return val ? 'true' : 'false';
+  var escaped = String(val).split('"').join('""');
+  return '"' + escaped + '"';
+}
+
+function buildOutput() {
+  var rawName = ($('tpl-name').value || '').trim();
+  var name = rawName || 'TEMPLATE_NAME';
+  var lines = [];
+  lines.push('if (isServer) then {');
+  lines.push('');
+  lines.push('    private _name = "' + name.split('"').join('""') + '";');
+  lines.push('');
+  lines.push('    private _settings = [');
+
+  var entries = ORDER.filter(function(k) { return k !== null; });
+  var lastKey = entries[entries.length - 1];
+
+  var prevBreak = false;
+  lines.push('');
+  ORDER.forEach(function(key) {
+    if (key === null) {
+      if (!prevBreak) lines.push('');
+      prevBreak = true;
+      return;
+    }
+    prevBreak = false;
+    var type = TYPES[key];
+    var val = STATE[key];
+    var keyPart = '["' + key + '",';
+    var valPart = formatValue(val, type);
+    var isLast = key === lastKey;
+    lines.push(INDENT + pad(keyPart, KEY_WIDTH) + pad(valPart, VAL_WIDTH) + ']' + (isLast ? '' : ','));
+  });
+
+  lines.push('');
+  lines.push('    ];');
+  lines.push('');
+  lines.push('    private _registry = profileNamespace getVariable ["AAS_Template_Registry", []];');
+  lines.push('    private _idx = _registry findIf { (_x select 0) == _name };');
+  lines.push('    if (_idx >= 0) then { _registry set [_idx, [_name, _settings]]; } else { _registry pushBack [_name, _settings]; };');
+  lines.push('    profileNamespace setVariable ["AAS_Template_Registry", _registry];');
+  lines.push('    profileNamespace setVariable ["AAS_ActiveTemplate",    _settings];');
+  lines.push('    saveProfileNamespace;');
+  lines.push('');
+  lines.push('    AAS_Template_Registry_Cache = _registry;');
+  lines.push('    publicVariable "AAS_Template_Registry_Cache";');
+  lines.push('');
+  lines.push('    { [_x select 0, _x select 1, 2, "server"] call CBA_settings_fnc_set; } forEach _settings;');
+  lines.push("    (format [\"[AAS] '%1' template installed and applied.\", _name]) remoteExec [\"systemChat\", 0];");
+  lines.push('    deleteVehicle this;');
+  lines.push('');
+  lines.push('};');
+  return lines.join('\n');
+}
+
+function regenerate() {
+  $('output').value = buildOutput();
+  var modCount = 0;
+  Object.keys(STATE).forEach(function(k) {
+    if (STATE[k] !== DEFAULTS[k]) modCount++;
+  });
+  $('mod-count').textContent = modCount;
+  var nameSet = $('tpl-name').value.trim() && $('tpl-name').value.trim() !== 'TEMPLATE_NAME';
+  if (!nameSet) {
+    $('status').textContent = 'Set template name';
+  } else if (modCount === 0) {
+    $('status').textContent = 'Defaults only';
+  } else {
+    $('status').textContent = modCount + ' override' + (modCount === 1 ? '' : 's');
+  }
+}
+
+// Handlers
+$('tpl-name').addEventListener('input', regenerate);
+
+$('copy').addEventListener('click', function() {
+  var out = $('output').value;
+  var done = function() {
+    var btn = $('copy');
+    btn.classList.add('copied');
+    btn.innerHTML = '&#x2713; Copied';
+    setTimeout(function() {
+      btn.classList.remove('copied');
+      btn.innerHTML = '&#x29C9; Copy template';
+    }, 1600);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(out).then(done, function() {
+      $('output').select(); try { document.execCommand('copy'); } catch (e) {} done();
+    });
+  } else {
+    $('output').select(); try { document.execCommand('copy'); } catch (e) {} done();
+  }
+});
+
+$('reset').addEventListener('click', function() {
+  if (!confirm('Reset all fields to vanilla NATO defaults?')) return;
+  Object.keys(DEFAULTS).forEach(function(k) { STATE[k] = DEFAULTS[k]; });
+  $('tpl-name').value = 'TEMPLATE_NAME';
+  renderForm();
+  regenerate();
+});
+
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'C' || e.key === 'c')) {
+    e.preventDefault();
+    $('copy').click();
+  }
+});
+
+renderForm();
+regenerate();
+</script>
+</body>
+</html>
